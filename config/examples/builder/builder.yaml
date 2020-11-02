@@ -1,0 +1,90 @@
+apiVersion: c-n-d-e.kube-platform.dev/v1alpha1
+kind: Builder
+metadata:
+  name: devenv-builder-k8s-go
+spec:
+  template:
+    initContainers:
+    - name: context
+      image: busybox
+      args: 
+        - /bin/sh
+        - -c
+        - cp -Lr /context/. /workspace
+      volumeMounts:
+        - name: context
+          mountPath: /context
+        - name: build
+          mountPath: /workspace
+    containers:
+    - name: kaniko
+      image: gcr.io/kaniko-project/executor:latest
+      args: ["--dockerfile=/workspace/Dockerfile",
+              "--context=/workspace",
+              "--cache=true",
+              "--destination=$IMAGE_TAG"]
+      volumeMounts:
+        - name: kaniko-secret
+          mountPath: /secret
+        - name: build
+          mountPath: /workspace
+      env:
+        - name: GOOGLE_APPLICATION_CREDENTIALS
+          value: /secret/kaniko-secret.json
+    restartPolicy: Never
+    volumes:
+      - name: kaniko-secret
+        secret:
+          secretName: c-n-d-e-kaniko-secret
+      - name: context
+        configMap:
+          name: c-n-d-e-dev-env-build-k8s-go
+      - name: build
+        emptyDir: {}
+
+---
+
+apiVersion: c-n-d-e.kube-platform.dev/v1alpha1
+kind: Builder
+metadata:
+  name: devenv-builder-k8s
+spec:
+  template:
+    initContainers:
+    - name: context
+      image: busybox
+      args: 
+        - /bin/sh
+        - -c
+        - cp -Lr /context/. /workspace
+      volumeMounts:
+        - name: context
+          mountPath: /context
+        - name: build
+          mountPath: /workspace
+    containers:
+    - name: kaniko
+      image: gcr.io/kaniko-project/executor:latest
+      args: ["--dockerfile=/workspace/Dockerfile",
+              "--context=/workspace",
+              "--cache=true",
+              "--destination=$IMAGE_TAG"]
+      volumeMounts:
+        - name: kaniko-secret
+          mountPath: /secret
+        - name: build
+          mountPath: /workspace
+      env:
+        - name: GOOGLE_APPLICATION_CREDENTIALS
+          value: /secret/kaniko-secret.json
+    restartPolicy: Never
+    volumes:
+      - name: kaniko-secret
+        secret:
+          secretName: c-n-d-e-kaniko-secret
+      - name: context
+        configMap:
+          name: c-n-d-e-dev-env-build-k8s
+      - name: build
+        emptyDir: {}
+

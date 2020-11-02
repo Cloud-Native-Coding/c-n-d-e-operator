@@ -1,0 +1,69 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: home
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myapp-pod
+spec:
+  containers:
+    - name: myapp-container
+      image: alpine
+      command: ["sh", "-c"]
+      args:
+        - mount -t proc /proc /home/cnde/proc/;
+          mount --rbind /sys /home/cnde/sys/;
+          mount --rbind /dev /home/cnde/dev/;
+          cp /etc/resolv.conf /home/cnde/etc/;
+          cp /etc/hosts /home/cnde/etc/;
+          exec chroot /home/cnde su cnde -c 'dumb-init code-server --auth none'
+      securityContext:
+        privileged: true
+      volumeMounts:
+        - mountPath: "/home/cnde"
+          name: home
+  initContainers:
+    - name: init-chroot
+      image: docker:19-dind
+      command: ["/bin/sh", "-c"]
+      args:
+        - if [ ! -f '/cnde/.cnde' ]; then
+          echo Creating new volume from $DEVENV_IMAGE;
+          docker export $(docker create $DEVENV_IMAGE) | tar -C cnde -xf -;
+          touch /cnde/.cnde;
+          chown -R 1000.1000 /cnde/home/cnde;
+          else echo File .cnde found. Keeping volume as it is;
+          fi
+      env:
+        - name: DEVENV_IMAGE
+          value: eu.gcr.io/general-purpose-220204/dev-env-selzer:latest
+      securityContext:
+        privileged: true
+      volumeMounts:
+        - mountPath: "/cnde"
+          name: home
+        - name: dockersock
+          mountPath: "/var/run/docker.sock"
+    - name: create-kubeconfig
+      image: eu.gcr.io/cloud-native-coding/create-kubeconfig
+      securityContext:
+        privileged: true
+      volumeMounts:
+        - name: home
+          mountPath: "/kube"
+          subPath: "home/cnde/.kube"
+  volumes:
+    - name: home
+      persistentVolumeClaim:
+        claimName: home
+    - name: dockersock
+      hostPath:
+        path: /var/run/docker.sock

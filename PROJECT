@@ -1,0 +1,10 @@
+domain: kube-platform.dev
+repo: cnde-operator.cloud-native-coding.dev
+resources:
+- group: c-n-d-e
+  kind: Builder
+  version: v1alpha1
+- group: c-n-d-e
+  kind: DevEnv
+  version: v1alpha1
+version: "2"

@@ -1,0 +1,80 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: vm
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: home
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myapp-pod
+spec:
+  containers:
+    - name: myapp-container
+      image: alpine
+      command: ["sh", "-c"]
+      args:
+        - mount -t proc /proc /home/cnde/proc/;
+          mount --rbind /sys /home/cnde/sys/;
+          mount --rbind /dev /home/cnde/dev/;
+          cp /etc/resolv.conf /home/cnde/etc/;
+          cp /etc/hosts /home/cnde/etc/;
+          exec chroot /home/cnde su cnde -c 'dumb-init code-server --auth none'
+      securityContext:
+        privileged: true
+      volumeMounts:
+        - mountPath: "/home/cnde"
+          name: vm
+        - mountPath: "/home/cnde/home/cnde"
+          name: home
+        - name: docker-credentials
+          readOnly: true
+          mountPath: "/root/.docker/"
+  initContainers:
+    - name: init-chroot
+      image: docker:19-dind
+      command: ["/bin/sh", "-c"]
+      args:
+        - DOCKER_HOST=unix:///var/run/docker.sock ;
+          ( dockerd-entrypoint.sh & ) ;
+          while (! docker stats --no-stream ); do sleep 1; done ;
+          docker export $(docker create eu.gcr.io/general-purpose-220204/dev-env-selzer:latest) | tar -C cnde -xvf - ;
+      securityContext:
+        privileged: true
+      volumeMounts:
+        - mountPath: "/cnde"
+          name: vm
+        - mountPath: "/cnde/home/cnde"
+          name: home
+        - name: docker-credentials
+          readOnly: true
+          mountPath: "/root/.docker/"
+  volumes:
+    - name: vm
+      persistentVolumeClaim:
+        claimName: vm
+    - name: home
+      persistentVolumeClaim:
+        claimName: home
+    - name: docker-credentials
+      secret:
+        secretName: docker-credentials
+        items:
+          - key: .dockerconfigjson
+            path: config.json

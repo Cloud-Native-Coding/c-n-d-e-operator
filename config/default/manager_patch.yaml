@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: controller-manager
+  namespace: system
+spec:
+  template:
+    spec:
+      containers:
+      - name: manager
+        env:
+          - name: CNDE_OAUTH_URL
+            value: "http://keycloak-http.kubeplatform"
+          - name: CNDE_OAUTH_ADMIN_NAME
+            valueFrom:
+              secretKeyRef:
+                name: cnde-oauth
+                key: CNDE_OAUTH_ADMIN_NAME
+          - name: CNDE_OAUTH_ADMIN_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: cnde-oauth
+                key: CNDE_OAUTH_ADMIN_PASSWORD
+          - name: CNDE_OAUTH_ADMIN_REALM
+            valueFrom:
+              secretKeyRef:
+                name: cnde-oauth
+                key: CNDE_OAUTH_ADMIN_REALM
+          - name: CNDE_OAUTH_INITIAL_PW
+            valueFrom:
+              secretKeyRef:
+                name: cnde-oauth
+                key: CNDE_OAUTH_INITIAL_PW
+          - name: CNDE_MANAGER_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
