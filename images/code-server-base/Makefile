@@ -1,4 +1,4 @@
-VERSION=3.4.1
+VERSION=3.8.0
 
 # Image URL to use all building/pushing image targets
 IMG ?= eu.gcr.io/cloud-native-coding/code-server-example:${VERSION}
@@ -11,3 +11,6 @@ docker-build:
 # Push the docker image
 docker-push:
 	docker push ${IMG}
+
+docker-run:
+	docker run --rm -p 8080:8080 ${IMG}
