@@ -5,7 +5,7 @@ CID := $(shell docker create ${IMG})
 
 # Build the docker image
 docker-build:
-	docker build . -t ${IMG}
+	docker build --no-cache -t ${IMG} .
 
 # Get the binary
 get: docker-build

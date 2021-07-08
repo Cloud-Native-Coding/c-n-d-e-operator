@@ -16,7 +16,7 @@ RUN apt-get update \
     tini \
   && rm -rf /var/lib/apt/lists/*
 
-ARG VERSION=3.8.0
+ARG VERSION=3.10.2
 
 RUN curl -SsL https://github.com/cdr/code-server/releases/download/v$VERSION/code-server-$VERSION-linux-amd64.tar.gz \
     | tar -C /tmp -xzf - && \

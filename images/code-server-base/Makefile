@@ -1,4 +1,4 @@
-VERSION=3.8.0
+VERSION=3.10.2
 
 # Image URL to use all building/pushing image targets
 IMG ?= eu.gcr.io/cloud-native-coding/code-server-example:${VERSION}
